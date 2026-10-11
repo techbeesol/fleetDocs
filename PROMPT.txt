@@ -1,0 +1,49 @@
+You are implementing the Fleet Management System in a freshly cloned repository on a
+new machine. The complete, approved design and conventions live in the docs/ folder —
+treat them as the single source of truth. Read ALL of these FIRST, before writing any
+code, in this order:
+
+  1. docs/business_requirement.md                 — what to build, roles, modules
+  2. docs/architecture_specification.md           — components, layers, deployment
+  3. docs/data_model_and_api_contracts.md         — DB schema + every API endpoint
+  4. docs/validation_and_formats.md               — field rules & India-specific formats
+  5. docs/coding_standards.md                     — backend + frontend code conventions
+  6. docs/ui_design_system_and_frontend_conventions.md — colors, theme, components, UI pattern
+  7. docs/navigation_map.md                       — screens, routes, menus, guards per app/role
+  8. docs/configuration_and_environments.md       — env vars, API base URL strategy
+  9. docs/api_integration_guide.md                — frontend↔API integration + error codes
+ 10. docs/demo_static_data_mode.md                — the staticData demo/mock-data mode
+ 11. docs/implementation_plan.md                  — the phased build order
+ 12. docs/PROJECT-LOG.md                          — confirmed tech stack & every decision
+ (Reference only: docs/user_manual.md — end-user guide.)
+
+Environment prerequisites to verify/install for local dev (no Docker):
+- Python 3.13 + uv; Node.js (LTS) + npm; Angular CLI; Ionic CLI; a local or Neon
+  PostgreSQL. Create backend/.env from .env.example (see docs/configuration_and_environments.md).
+
+Then begin implementation by following docs/implementation_plan.md in dependency order,
+starting with Phase 0 (Project Setup & Foundations). Work ONE phase at a time. After each
+phase: run the tests, report line AND branch coverage against the 80% gate, update
+docs/PROJECT-LOG.md with what was done and any new decision, then STOP for my review
+before the next phase.
+
+Hard constraints (do not deviate):
+- Approved stack only (see docs/PROJECT-LOG.md): Python 3.13 + FastAPI + async SQLAlchemy
+  2.0 + Alembic + asyncpg + PostgreSQL (backend); Angular 20 + Angular Material + AG Grid
+  Community + Bootstrap 5 + RxJS (Super Admin web); Ionic 8 + Capacitor 7 (Admin & User
+  mobile); Angular Signals for state (no NgRx). No Docker for local dev.
+- Enforce multi-tenant isolation (tenant_id from the JWT) and role-based auth exactly as
+  documented. Build the schema and API contracts exactly as specified — do not rename
+  fields or endpoints.
+- Follow docs/coding_standards.md, docs/validation_and_formats.md, the UI design system,
+  and docs/navigation_map.md precisely (colors, components, menus per role).
+- API base URL goes in the app's environment.ts; endpoint paths in shared code constants;
+  implement the staticData demo mode as documented. Never hard-code URLs.
+- Aadhaar is sensitive: store encrypted at rest, show masked, never log it.
+
+Do not invent or assume requirements. If something is genuinely missing or ambiguous, STOP
+and ask me in ONE batched message rather than guessing.
+
+Start now with Phase 0: confirm the required tools are available, then show me the planned
+monorepo folder structure and the exact setup commands you will run, and wait for my go-ahead
+before creating files.
