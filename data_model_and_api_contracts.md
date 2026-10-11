@@ -86,6 +86,7 @@ Implemented as PostgreSQL `ENUM` types (or `TEXT` + `CHECK`).
 | `expense_category` | `fuel`, `toll`, `parking`, `permit`, `other` | `trip_expenses.category` |
 | `compliance_status` | `valid`, `expired`, `pending` | `vehicles.insurance_status`, `vehicles.fc_status` |
 | `attachment_kind` | `receipt`, `rc_card`, `license`, `other` | `attachments.kind` |
+| `payment_status` | `unpaid`, `partial`, `paid` | `trips.payment_status` |
 
 > Designation is free text (e.g. "Driver", "Mechanic", "Co-pilot"); when designation is "Driver", `license_number` is required (enforced in the service layer).
 
@@ -161,16 +162,23 @@ CREATE TABLE trips (
     start_km        INTEGER,
     end_km          INTEGER,
     status          trip_status NOT NULL DEFAULT 'draft',
+    billed_amount NUMERIC(12,2) NOT NULL DEFAULT 0,  -- fare / customer charge
+    fare_gst_amount NUMERIC(12,2),                   -- optional GST on fare (nullable)
+    advance_paid NUMERIC(12,2) NOT NULL DEFAULT 0,
+    balance_amount NUMERIC(12,2) GENERATED ALWAYS AS (billed_amount - advance_paid) STORED,
+    payment_status payment_status NOT NULL DEFAULT 'unpaid',
     created_by      BIGINT NOT NULL REFERENCES users(id),
     approved_by     BIGINT REFERENCES users(id),
     approved_at     TIMESTAMPTZ,
     created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
-    CONSTRAINT ck_trips_km CHECK (end_km IS NULL OR start_km IS NULL OR end_km >= start_km)
+    CONSTRAINT ck_trips_km CHECK (end_km IS NULL OR start_km IS NULL OR end_km >= start_km),
+    CONSTRAINT ck_trips_fare CHECK (billed_amount >= 0 AND advance_paid >= 0 AND advance_paid <= billed_amount),
+    CONSTRAINT ck_trips_fare_gst CHECK (fare_gst_amount IS NULL OR fare_gst_amount >= 0)
 );
 ```
 
-`total_km` is computed in SQL (`end_km - start_km`), not stored.
+`total_km` is computed in SQL (`end_km - start_km`), not stored. `balance_amount` is a stored generated column (`billed_amount - advance_paid`). **Trip profit = `billed_amount` - total trip expenses** (computed in SQL in reports; service costs are excluded).
 
 ### 4.5 trip_expenses (itemized)
 
@@ -236,6 +244,7 @@ CREATE TABLE trip_planner (
     destination_location TEXT NOT NULL,
     round_trip          BOOLEAN NOT NULL DEFAULT false,
     estimated_km        INTEGER,
+    estimated_fare NUMERIC(12,2),                     -- optional quotation fare
     planned_from        DATE NOT NULL,
     planned_to          DATE NOT NULL,
     total_days          INTEGER GENERATED ALWAYS AS ((planned_to - planned_from) + 1) STORED,
@@ -447,9 +456,14 @@ All roles access trips. The `user` role is restricted to **their own** trips
   "location": "string",
   "trip_date": "YYYY-MM-DD",
   "start_km": 1000,
-  "end_km": 1250
+  "end_km": 1250,
+  "billed_amount": 5000.00,
+  "fare_gst_amount": 250.00,
+  "advance_paid": 2000.00,
+  "payment_status": "unpaid | partial | paid"
 }
 ```
+- Fare fields may be set/edited by **all roles** (including the driver/user on their own trip). `balance_amount` is server-computed.
 
 **Trip response (computed fields in SQL)**
 ```json
@@ -458,10 +472,14 @@ All roles access trips. The `user` role is restricted to **their own** trips
   "driver": { "id": 1, "name": "..." },
   "vehicle": { "id": 2, "vehicle_number": "..." },
   "start_km": 1000, "end_km": 1250, "total_km": 250,
+  "billed_amount": 5000.00, "fare_gst_amount": 250.00,
+  "advance_paid": 2000.00, "balance_amount": 3000.00, "payment_status": "partial",
   "total_expense": 3200.00,
+  "profit": 1800.00,
   "approved_by": null, "approved_at": null
 }
 ```
+> **Profit visibility:** `profit` (= `billed_amount` - `total_expense`) is **omitted** from the response for the `user` role. The driver sees the fare and expenses but not the profit figure; profit reporting is super-admin only.
 
 **Nested expense endpoints**
 | Method | Path | Body | Success | Roles |
@@ -522,12 +540,14 @@ Not accessible to the `user` role. Covers planning + quotation.
   "destination_location": "string",
   "round_trip": true,
   "estimated_km": 450,
+  "estimated_fare": 6000.00,
   "planned_from": "YYYY-MM-DD",
   "planned_to": "YYYY-MM-DD",
   "trip_notes": "string | null"
 }
 ```
 - `total_days` is server-computed (read-only) and returned in the response.
+- `estimated_fare` is optional (the expected quotation fare before the trip).
 
 ## 14. File / Attachment Endpoints
 
@@ -562,6 +582,18 @@ Read-only, super_admin only. Figures computed in SQL.
                    "permit": 3000.00, "other": 2500.00 },
   "service_cost": 12000.00,
   "total_expense": 69000.00
+}
+```
+
+**Trip profit response (illustrative)** — `profit = billed_amount - trip expenses` (service costs are **excluded** from trip profit).
+
+```json
+{
+  "period": { "from": "2026-10-01", "to": "2026-10-31" },
+  "items": [
+    { "trip_id": 10, "billed_amount": 5000.00, "total_expense": 3200.00, "profit": 1800.00 }
+  ],
+  "totals": { "revenue": 5000.00, "expense": 3200.00, "profit": 1800.00 }
 }
 ```
 
