@@ -87,6 +87,14 @@ Legend: **Purpose** · **Version** · **License** · **Reason**
 | 2026-10-09 | No Docker for local development | Confirmed | Run apps directly; managed services for deploy only. |
 | 2026-10-09 | Auth tokens = JWT access + refresh; 15 min access / 7 day refresh | Confirmed | Short-lived access limits risk; refresh keeps users logged in. |
 | 2026-10-09 | Backend API host = Render | Confirmed | Flat $7/mo always-on, predictable cost, free tier for dev, native Python; fits Neon + R2. |
+| 2026-10-09 | Backend API host = Render | Confirmed | Flat $7/mo always-on, predictable cost, free tier for dev, native Python; fits Neon + R2. |
+| 2026-10-10 | UI design system defined (naval blue 🟦#1565C0, amber 🟨#FFA000, success 🟩#2E7D32, error 🟥#D32F2F, Roboto, light-only, rounded/friendly, vehicle loader) | Confirmed | See docs/ui_design_system_and_frontend_conventions.md. |
+| 2026-10-10 | Frontend pattern = feature-based, standalone components, smart/dumb split, services + Signals | Confirmed | Same across all three apps; testable to 80% gate. |
+| 2026-10-10 | Formats = Indian phone (6–9, 10-digit), Aadhaar 12-digit (stored encrypted, masked display), vehicle no., DD/MM/YYYY display + IST (store UTC), ₹ Indian grouping, password min 6 (no complexity) | Confirmed | See docs/validation_and_formats.md. |
+| 2026-10-10 | API base URL in UI `environment.ts`; endpoint paths in shared code constants; backend endpoints in code, secrets in env | Confirmed | See docs/configuration_and_environments.md. |
+| 2026-10-10 | Added coding standards, navigation map, config/env, API integration + error-code catalog docs | Confirmed | Reduces cross-developer ambiguity. |
+| 2026-10-10 | Demo `staticData` flag (frontend-only, build-time, all 3 apps): true = local dummy JSON with in-memory writes + any-credentials login; false = real API | Confirmed | See docs/demo_static_data_mode.md. |
+| 2026-10-10 | Revenue model = fare on Trip (`billed_amount` + optional GST + `advance_paid` + auto balance + `payment_status`); optional `estimated_fare` on Trip Planner; all roles can enter fare; **trip profit = fare - trip expenses** (service costs excluded); profit hidden from driver, reports super-admin only | Confirmed | Closes the profit-without-revenue gap. |
 
 ### Pending decisions
-_None._
+- **Logo** — real logo to replace the placeholder (user to provide).

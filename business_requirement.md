@@ -125,8 +125,13 @@ flowchart TD
 |---|---|
 | 1. Trip Info | Driver Name, Vehicle, Location / Route, Trip Date |
 | 2. Odometer | Start KM, End KM, Total KM (auto-calculated) |
-| 3. Expenses | Fuel, Toll, Parking, Permit Cost, Other Maintenance Cost, Proof / Receipt upload |
-| 4. Review & Submit | Summary + submit for approval |
+| 3. Fare / Billing | Billed Amount (fare), GST on fare (optional), Advance Paid, Balance (auto), Payment Status (unpaid/partial/paid) |
+| 4. Expenses | Fuel, Toll, Parking, Permit Cost, Other Maintenance Cost, Proof / Receipt upload |
+| 5. Review & Submit | Summary + submit for approval |
+
+> **Fare & profit:** all roles (including the driver) can see and enter the fare.
+> **Trip profit = fare - trip expenses** (service costs excluded). Profit is hidden from the driver/user; profit reporting is super-admin only.
+
 
 **Approval workflow:** Single-level approval. A submitted trip is approved (or rejected) by any one approver — any admin or super-admin may act on it. No second-level sign-off is required.
 
@@ -216,19 +221,21 @@ stateDiagram-v2
 1. Destination Location
 2. Round Trip (Yes / No)
 3. Estimated KM
-4. Planned Dates (From & To)
-5. Total Days (read-only, auto-calculated from dates)
-6. Trip Notes (free text / textarea)
+4. Estimated Fare (optional quotation amount)
+5. Planned Dates (From & To)
+6. Total Days (read-only, auto-calculated from dates)
+7. Trip Notes (free text / textarea)
+
 
 ---
 
 ### 5.6 Reports – Expense & Profit
 
-**Description:** Financial overview for the business owner, derived from trip expenses and service costs.
+**Description:** Financial overview for the business owner, derived from trip fares and expenses.
 
 **Access:** super-admin (Read) only.
 
-**Contents (proposed):** Total expenses by trip/vehicle/period, fuel vs toll vs maintenance breakdown, estimated profit per trip.
+**Contents (proposed):** Total expenses by trip/vehicle/period, fuel vs toll vs maintenance breakdown, and **profit per trip = fare (billed amount) - trip expenses** (service costs excluded from trip profit). The driver/user never sees profit.
 
 ---
 
